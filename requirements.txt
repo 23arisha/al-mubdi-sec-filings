@@ -1,0 +1,8 @@
+streamlit
+requests
+beautifulsoup4
+langchain
+langchain-community
+langchain-groq
+huggingface-hub
+sentence-transformers
