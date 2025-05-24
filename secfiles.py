@@ -124,33 +124,35 @@ if st.button("Summarize"):
         st.error("Please enter a URL.")
     else:
         try:
-            embedding_model = HuggingFaceEmbeddings(
-                model_name="all-MiniLM-L6-v2",
-                cache_folder="./hf_model_cache",  # safer default
-            )
             status_placeholder = st.empty()
 
             # Show the loading message
             status_placeholder.info("Fetching and summarizing...")
             text = extract_sections_from_10k_html(url)
-            documents = [Document(page_content=text)]
-            vectordb = VectorstoreIndexCreator(
-                text_splitter=RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100),
-                embedding=embedding_model
-            ).from_documents(documents)
-            qa_chain = RetrievalQA.from_chain_type(
-                llm=chat_model,
-                retriever=vectordb.vectorstore.as_retriever(),
-                chain_type="stuff"
+            if not text.strip():
+                st.warning("❗ No recognizable 10-K sections were found in the provided URL. Please ensure the URL is for a valid 10-K filing and try again.")
+                status_placeholder.empty()
+            else:
+                embedding_model = HuggingFaceEmbeddings(
+                model_name="all-MiniLM-L6-v2",
+                cache_folder="./hf_model_cache",  # safer default
             )
-            query = prompt_template + "\n\nPlease evaluate the 10-K section in detail."
-            summary = qa_chain.run(query)
-            # Clear the loading message
-            status_placeholder.empty()
+                documents = [Document(page_content=text)]
+                vectordb = VectorstoreIndexCreator(
+                    text_splitter=RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100),
+                    embedding=embedding_model
+                ).from_documents(documents)
+                qa_chain = RetrievalQA.from_chain_type(
+                    llm=chat_model,
+                    retriever=vectordb.vectorstore.as_retriever(),
+                    chain_type="stuff"
+                )
+                query = prompt_template + "\n\nPlease evaluate the 10-K section in detail."
+                summary = qa_chain.run(query)
 
-            # Show success message and summary
-            st.success("Summary Ready!")
-            st.markdown(f'<div class="summary-box">{summary}</div>', unsafe_allow_html=True)
+                status_placeholder.empty()
+                st.success("Summary Ready!")
+                st.markdown(f'<div class="summary-box">{summary}</div>', unsafe_allow_html=True)
 
         except Exception as e:
             st.error(f"Error: {e}")
