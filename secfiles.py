@@ -144,7 +144,7 @@ if st.button("Summarize"):
                 chain_type="stuff"
             )
             query = prompt_template + "\n\nPlease evaluate the 10-K section in detail."
-            summary = qa_chain.invoke(query)
+            summary = qa_chain.run(query)
             # Clear the loading message
             status_placeholder.empty()
 
